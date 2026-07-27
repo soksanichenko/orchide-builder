@@ -178,7 +178,7 @@ createDefinition(){
     sleep 0.1
     hasCollections=$(ansible-doc -t module $col -l)
     if [ -n "${hasCollections}" ]; then
-      ansible-doc -t module $col --metadata-dump | jq .all.module | \
+      ansible-doc -t module $col --metadata-dump --no-fail-on-errors | jq .all.module | \
         jq 'to_entries | map({(.key): (if .value.doc.deprecated != null then {deprecated: (.value.doc.deprecated + {state: true})} else {} +{ deprecated: {state: false }} end +{"short_description": (.value.doc.short_description)} ) }) | add' \
         >  $PARSERS/${col}/_list_of_all_modules.json
       if [ $? -ne 0 ] ; then
@@ -186,7 +186,7 @@ createDefinition(){
         touch $TMP/error.txt
         return 1
       fi
-      ansible-doc -t module $col --metadata-dump | jq .all.module | jq -r 'to_entries' | jq -c '.[]' | while read -r col_module; do
+      ansible-doc -t module $col --metadata-dump --no-fail-on-errors | jq .all.module | jq -r 'to_entries' | jq -c '.[]' | while read -r col_module; do
         fqcn=$(echo "$col_module" | jq -r '.key')
         name=${fqcn##*.}
         echo "$col_module" | jq '{(.key): .value} | walk(if type == "object" then del(.filename) else . end)' >  ${MODULES}/${col}/${name}.json
